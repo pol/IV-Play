@@ -247,26 +247,27 @@ IV/Play will display icons and any art type for non-working games if they are pr
 
 The command line override in the **F1** configuration dialogue allows the use of various switches to be added to launched games, e.g. –window to play games windowed without having to drop to the mame.ini for editing.
 
-# IV/Play 1.5.3 Feature
+# IV/Play 1.5.3 Features
 
 ## Mechanical Games Filter
 
 The F1 configuration dialogue contains a check box for hiding non-working mechanical games. These are games that have been added to MAME that contain mechanical or physical elements that cannot currently be emulated; including pinball games and gambling fruit/slot machines. By toggling this, 8000+ non-working mechanical games are removed from the game list.
 
-# IV/Play 1.5.5 Feature
+# IV/Play 1.5.5 Features
 
 ## Filter on input
 
 The F1 configuration contains an option to filter on input. This will display progressive results directly in the game list by typing the game name, year, manufacturer, or source file. Backspace will delete one character at a time and CTRL-backspace will clear the typed filter. The progressive filtered text will appear on the titlebar. (Note this produces the same functional results as doing a CTRL-F filter search).
 
+# IV/Play 1.6.0 Features
+
+Update IV/Play to work with MAME 0.162. IV/Play is now also open source under the MIT License. For more information refer to the LICENSE file.
+
 # Notes/Hints
 
 -   The initial IV/Play dimensions are 1015x432, a 2.35 aspect ratio in honor of [TohoScope](http://en.wikipedia.org/wiki/TohoScope), used for Godzilla movies.
-
 -   If games are not populating the Jump List, verify on the start menu properties dialogue for Windows that ‘Store and display recently opened items in the Start menu and the taskbar’ is checked.
-
 -   Left and Right arrows navigate a letter’s worth of games.
-
 -   Typing out the full name of a game navigates there.
 
 # Credits
