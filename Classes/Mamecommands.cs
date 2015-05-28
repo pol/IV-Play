@@ -29,13 +29,9 @@ namespace IV_Play
 
 
                 //Setup the XML Reader/Writer options                
-
-
-
                 using (StreamReader myOutput = proc.StandardOutput)
                 {
                     // Read the actual output from MAME -showusage
-
                     while (!myOutput.EndOfStream)
                     {
                         try

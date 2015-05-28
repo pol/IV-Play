@@ -32,6 +32,7 @@ namespace IV_Play
             //Get the mame commands this seems like the best place to do it
             SettingsManager.MameCommands = new MameCommands(Settings.Default.MAME_EXE);
 
+            String gameElementName = "game";
             Games = new Games();            
 
             XmlReaderSettings xs = new XmlReaderSettings();
@@ -52,8 +53,15 @@ namespace IV_Play
                                 xmlReader.ReadToFollowing("mame");
                                 Games.MameVersion = xmlReader["build"];
 
+                                float floatMameVersion = float.Parse(Games.MameVersion.Substring(0,5));
+
+                                if (floatMameVersion >= 0.162)
+                                {
+                                    gameElementName = "machine";
+                                }
+
                                 //Read Game elements
-                                while (xmlReader.ReadToFollowing("game"))
+                                while (xmlReader.ReadToFollowing(gameElementName))
                                 {
                                     //No bios sets should be in our XML, but check anyways
                                     if (!string.IsNullOrEmpty(xmlReader["isbios"]) &&
@@ -86,7 +94,7 @@ namespace IV_Play
                                     {
                                         //If we reached a game element here it means we must have reached the
                                         //end of the current game, so we break out of this loop to find the next game.
-                                        if (xmlReader.Name.Equals("game"))
+                                        if (xmlReader.Name.Equals(gameElementName))
                                             break;
 
                                         switch (xmlReader.Name)
@@ -264,107 +272,108 @@ namespace IV_Play
                 xmlWriterSettings = new XmlWriterSettings();
                 xmlWriterSettings.ConformanceLevel = ConformanceLevel.Fragment;
                 xmlWriterSettings.Indent = true;
-
-
+                                
                 using (StreamReader myOutput = proc.StandardOutput)
                 {
-                    // Read the actual output from MAME -listxml
-                    using (StringReader sr = new StringReader(myOutput.ReadToEnd()))
+                    // Create a fast XML Reader
+                    using (XmlReader xmlReader = XmlReader.Create(myOutput, xmlReaderSettings))
                     {
-                        //Wait for MAME to finish
-                        proc.WaitForExit();
-
-                        //Copy the output to a seekable memory stream which we use to read the XML mame generated
-                        using (MemoryStream ms = new MemoryStream(Encoding.ASCII.GetBytes(sr.ReadToEnd())))
+                        //Save it to our Data file
+                        using (FileStream outFile = File.Create("IV-Play.dat"))
                         {
-                            // Create a fast XML Reader
-                            using (XmlReader xmlReader = XmlReader.Create(ms, xmlReaderSettings))
+                            //And zip it
+                            using (GZipStream gZipStream = new GZipStream(outFile, CompressionMode.Compress))
                             {
-                                //Save it to our Data file
-                                using (FileStream outFile = File.Create("IV-Play.dat"))
+                                //XmlWriter creates IV/Play's Data
+                                using (XmlWriter xmlWriter = XmlWriter.Create(gZipStream, xmlWriterSettings))
                                 {
-                                    //And zip it
-                                    using (GZipStream gZipStream = new GZipStream(outFile, CompressionMode.Compress))
+                                    while (xmlReader.Read())
                                     {
-                                        //XmlWriter creates IV/Play's Data
-                                        using (XmlWriter xmlWriter = XmlWriter.Create(gZipStream, xmlWriterSettings))
+                                        //Here because the XML is so big we have to flush at the cost of performance
+                                        xmlWriter.Flush();
+
+                                        //The Name represents the XML element name
+                                        switch (xmlReader.Name)
                                         {
-                                            while (xmlReader.Read())
-                                            {
-                                                //Here because the XML is so big we have to flush at the cost of performance
-                                                xmlWriter.Flush();
-
-                                                //The Name represents the XML element name
-                                                switch (xmlReader.Name)
+                                            case "mame":
+                                                if (xmlReader.IsStartElement())
                                                 {
-                                                    case "mame":
-                                                        if (xmlReader.IsStartElement())
+                                                    xmlWriter.WriteStartElement(xmlReader.Name);
+                                                    if (xmlReader.HasAttributes)
+                                                    {
+                                                        xmlWriter.WriteAttributes(xmlReader, true);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    xmlWriter.WriteEndElement();
+                                                }
+                                                break;
+                                            case "machine":
+                                            case "game":
+                                                if (xmlReader.IsStartElement())
+                                                {
+                                                    //Is the game a bios set? if so, read to the next game.
+                                                    while (!IsValidGame(xmlReader))
+                                                    {
+                                                        xmlReader.ReadToNextSibling(xmlReader.Name);
+                                                    }
+
+
+                                                    if (xmlReader.Name.Equals(xmlReader.Name))
+                                                    {
+                                                        xmlWriter.WriteStartElement(xmlReader.Name);
+                                                        if (xmlReader.HasAttributes)
                                                         {
-                                                            xmlWriter.WriteStartElement(xmlReader.Name);
                                                             xmlWriter.WriteAttributes(xmlReader, true);
-                                                            xmlWriter.WriteEndElement();
-                                                        }
-                                                        break;
-                                                    case "game":
-                                                        if (xmlReader.IsStartElement())
-                                                        {
-                                                            //Is the game a bios set? if so, read to the next game.
-                                                            while (!IsValidGame(xmlReader))
-                                                            {
-                                                                xmlReader.ReadToNextSibling("game");
-                                                            }
-
-
-                                                            if (xmlReader.Name.Equals("game"))
-                                                            {
-                                                                xmlWriter.WriteStartElement(xmlReader.Name);
-                                                                xmlWriter.WriteAttributes(xmlReader, true);
-                                                            }
+                                                        }                                                        
+                                                    }
                                                             
-                                                        }
-                                                        else
-                                                            xmlWriter.WriteEndElement();
-                                                        break;
-                                                    case "year":
-                                                    case "manufacturer":
-                                                        if (xmlReader.IsStartElement())
-                                                            xmlWriter.WriteElementString(xmlReader.Name,
-                                                                                         xmlReader.
-                                                                                             ReadElementContentAsString());
-                                                        break;
-                                                    case "description":
-                                                        if (xmlReader.IsStartElement())
-                                                        {
-                                                            string description = xmlReader.ReadElementContentAsString();
-                                                            description = GetDescription(description);
-                                                            xmlWriter.WriteElementString("description", description);
-                                                        }
-                                                        break;
-                                                    case "control":
-                                                    case "display":
-                                                    case "driver":
-                                                    case "chip":
-                                                    case "rom":
-                                                    case "input":
-                                                    case "disk":
-                                                        if (xmlReader.IsStartElement())
-                                                        {
-                                                            xmlWriter.WriteStartElement(xmlReader.Name);
-                                                            xmlWriter.WriteAttributes(xmlReader, true);
-                                                            xmlWriter.WriteEndElement();
-                                                        }
-                                                        break;
-                                                } //end switch statement
-                                            } // end while loop
-                                        } // END USING XML WRITER
-                                    } // END USING GZIP
-                                } // END USING FILE OUTPUT
-                            } // END USING XML READER
-                        } // END USING MEMORYSTREAM
-                    } //END USING STRING READER
+                                                }
+                                                else
+                                                    xmlWriter.WriteEndElement();
+                                                break;
+                                            case "year":
+                                            case "manufacturer":
+                                                if (xmlReader.IsStartElement())
+                                                    xmlWriter.WriteElementString(xmlReader.Name,
+                                                                                    xmlReader.
+                                                                                        ReadElementContentAsString());
+                                                break;
+                                            case "description":
+                                                if (xmlReader.IsStartElement())
+                                                {
+                                                    string description = xmlReader.ReadElementContentAsString();
+                                                    description = GetDescription(description);
+                                                    xmlWriter.WriteElementString("description", description);
+                                                }
+                                                break;
+                                            case "control":
+                                            case "display":
+                                            case "driver":
+                                            case "chip":
+                                            case "rom":
+                                            case "input":
+                                            case "disk":
+                                                if (xmlReader.IsStartElement())
+                                                {
+                                                    xmlWriter.WriteStartElement(xmlReader.Name);
+                                                    if (xmlReader.HasAttributes)
+                                                    {
+                                                        xmlWriter.WriteAttributes(xmlReader, true);
+                                                    }
+                                                    xmlWriter.WriteEndElement();
+                                                }
+                                                break;
+                                        } //end switch statement
+                                    } // end while loop
+                                } // END USING XML WRITER
+                            } // END USING GZIP
+                        } // END USING FILE OUTPUT
+                    } // END USING XML READER
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 //Generate an error and delete our Data file, maybe the mame xml format changed?
                 MessageBox.Show("Unable to create database from mame.exe.\r\nIV/Play will now exit.", "Error");
