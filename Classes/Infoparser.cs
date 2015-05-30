@@ -63,9 +63,15 @@ namespace IV_Play
                            continue;
                        else
                        {
-                           stringBuilder.AppendLine(line);
+                           if (line.Length == 0)
+                           {
+                               stringBuilder.AppendLine("\r\n");
+                           }
+                           else
+                           {
+                               stringBuilder.AppendLine(line);
+                           }                           
                        }
-
                    }
                }
             }
