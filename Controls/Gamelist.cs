@@ -289,7 +289,10 @@ namespace IV_Play
                     Process proc = Process.Start(psi);
 
                     StreamReader streamReader = proc.StandardError;
-                    Parent.Hide();
+
+                    Form parent = ((Form)Parent);
+                    var windowState = parent.WindowState;
+                    parent.WindowState = FormWindowState.Minimized;
 
                     //jumpListClass.AddTask(SelectedGame);
 
@@ -300,7 +303,6 @@ namespace IV_Play
 
                     proc.WaitForExit();
 
-
                     using (StringReader stringReader = new StringReader(streamReader.ReadToEnd()))
                     {
                         string s = stringReader.ReadToEnd();
@@ -308,7 +310,7 @@ namespace IV_Play
                             if (s.Contains("ERROR")) // Check is MAME returned an error and display it.
                                 MessageBox.Show(s);
                     }
-                    Parent.Show();
+                    parent.WindowState = windowState;
                 }
             }
             catch
