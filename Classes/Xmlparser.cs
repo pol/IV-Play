@@ -53,7 +53,7 @@ namespace IV_Play
                                 xmlReader.ReadToFollowing("mame");
                                 Games.MameVersion = xmlReader["build"];
 
-                                float floatMameVersion = float.Parse(Games.MameVersion.Substring(0,5));
+                                float floatMameVersion = float.Parse(Games.MameVersion.Substring(0,5), System.Globalization.CultureInfo.GetCultureInfo("en-US"));
 
                                 if (floatMameVersion >= 0.162)
                                 {
